@@ -14,7 +14,7 @@ def main():
 	print hex(dirStart)
 	f.seek(dirStart)
 	firstDict=parseDict(f.read(32))
-	print(fi)
+	print(firstDict)
 
 def parseDict(record):
 	"""parses a 32 byte long string and parses
@@ -32,18 +32,21 @@ def parseDict(record):
 		{"desc":"File Size", "abbrv":"DIR_FileSize",
 			"type":"int","sig":False},
 	]
-	dictfmt="<"+list_to_struct(dictStruct)
-	dictStruct=struct.unpack_from(dictfmt,record)
+	unpacked=pretty_unpack(dictStruct,record)
+	print parseDictAttr(unpacked["DIR_Attr"])
+	#Normal record with short filename - Attrib is normal
+	#Long filename text - Attrib has all four type bits set
+	#Unused - First byte is 0xE5
+	#End of directory - First byte is zero 
+	return unpacked
 
-	titles=[i["abbrv"] for i in dictStruct if i["type"]!="pad"]
-	return dict(zip(titles,dictStruct))
-
-parse dictAttr(attrByte):
+def parseDictAttr(attrByte):
 	"""Takes a single byte and parses it as an attribute-byte for a catalog
 	returns a dict of boolean attributes
 	"""
 	bitmap=[bool(attrByte>>i&1) for i in range(8)]
-	return zip(["RO","Hidden","isVolID","isDict","Archived","MBZ","MBZ"],bitmap)
+	names=["RO","Hidden","system","isVolID","isDict","Archived","MBZ","MBZ"]
+	return dict(zip(names,bitmap))
 
 def parseFatHeader(header):
 	"""parses a 512 byte long string and parses
@@ -75,9 +78,16 @@ def parseFatHeader(header):
 			"type":"short","sig":False}
 	]
 
-	headfmt="<"+list_to_struct(headStruct)
-	headerStruct=struct.unpack_from(headfmt,header)
-	titles=[i["abbrv"] for i in headStruct if i["type"]!="pad"]
+	return pretty_unpack(headStruct,header)
+
+def pretty_unpack(pformat,data):
+	"""Takes a pretty sturct format as expected by list_to_struct
+	returns a dict with each field-value indexed by a "abbrv" attribute
+	"""
+
+	fmt="<"+list_to_struct(pformat)
+	headerStruct=struct.unpack_from(fmt,data)
+	titles=[i["abbrv"] for i in pformat if i["type"]!="pad"]
 	return(dict(zip(titles,headerStruct)))
 
 def list_to_struct(list):
