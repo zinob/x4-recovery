@@ -1,20 +1,34 @@
 #!/usr/bin/python
+#all FAT32 code based on:
+# https://www.pjrc.com/tech/8051/ide/fat32.html
 
 import struct
+from pprint import pprint
 
 def main():
+	#f=open("/home/zinob/Projekt/filmrec/two-dirs-fat.dd")
 	f=open("/home/zinob/Backups/sdcard.dd")
 	h=parseFatHeader(f.read(0x200))
 
+	pprint(["main",h])
 	cluster_begin_lba=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
 	sectors_per_cluster = h["BPB_SecPerClus"]
 	root_dir_first_cluster = h["BPB_RootClus"]
 	#lba_addr = cluster_begin_lba + (cluster_number - 2) * sectors_per_cluster
-	dirStart=cluster_begin_lba*h["BPB_BytsPerSec"]
+	dirStart=(cluster_begin_lba)*h["BPB_BytsPerSec"]
 	print hex(dirStart)
+	readDir(f,dirStart)
+	#f.seek(dirStart)
+	#firstDict=parseDict(f.read(32))
+	#pprint(["main",firstDict])
+
+def readDir(f,dirStart):
 	f.seek(dirStart)
-	firstDict=parseDict(f.read(32))
-	print(firstDict)
+	cRecord=parseDict(f.read(32))
+	while cRecord["TYPE"]!="end":
+		if cRecord["TYPE"]!="normal":
+			print cRecord
+		cRecord=parseDict(f.read(32))
 
 def parseDict(record):
 	"""parses a 32 byte long string and parses
@@ -25,15 +39,31 @@ def parseDict(record):
 			"len":11,"type":"string","sig":False},
 		{"desc":"Attrib Byte", "abbrv":"DIR_Attr",
 			"type":"byte","sig":False},
+		 {"desc":"Padding", "abbrv":"","len":8,"type":"pad"},
 		{"desc":"First Cluster High", "abbrv":"DIR_FstClusHI",
 			"type":"short","sig":False},
+		 {"desc":"Padding", "abbrv":"","len":4,"type":"pad"},
 		{"desc":"First Cluster Low", "abbrv":"DIR_FstClusLO",
 			"type":"short","sig":False},
 		{"desc":"File Size", "abbrv":"DIR_FileSize",
 			"type":"int","sig":False},
 	]
 	unpacked=pretty_unpack(dictStruct,record)
-	print parseDictAttr(unpacked["DIR_Attr"])
+	attr=unpacked["DIR_Attr"]
+
+	unpacked["DIR_Attr"]=parseDictAttr(unpacked["DIR_Attr"])
+
+	if attr&15==15:
+		unpacked["TYPE"]="long"
+
+	elif unpacked["DIR_Name"][0]=="\0":
+		unpacked["TYPE"]="end"
+
+	elif unpacked["DIR_Name"][0]=="\x5e":
+		unpacked["TYPE"]="deleted"
+
+	else:
+		unpacked["TYPE"]="normal"
 	#Normal record with short filename - Attrib is normal
 	#Long filename text - Attrib has all four type bits set
 	#Unused - First byte is 0xE5
@@ -45,7 +75,7 @@ def parseDictAttr(attrByte):
 	returns a dict of boolean attributes
 	"""
 	bitmap=[bool(attrByte>>i&1) for i in range(8)]
-	names=["RO","Hidden","system","isVolID","isDict","Archived","MBZ","MBZ"]
+	names=["RO","Hidden","isSystem","isVolID","isDict","Archived","MBZ","MBZ"]
 	return dict(zip(names,bitmap))
 
 def parseFatHeader(header):
@@ -77,8 +107,9 @@ def parseFatHeader(header):
 		{"desc":"Signature = 0xAA55=43605", "abbrv":"sign",
 			"type":"short","sig":False}
 	]
-
-	return pretty_unpack(headStruct,header)
+	header=pretty_unpack(headStruct,header)
+	assert header["sign"]==43605, "invalid disk header"
+	return header
 
 def pretty_unpack(pformat,data):
 	"""Takes a pretty sturct format as expected by list_to_struct
