@@ -3,7 +3,7 @@
 # https://www.pjrc.com/tech/8051/ide/fat32.html
 
 import struct
-from zutils import dbg,list_to_struct,pretty_unpack
+from zutils import pretty_unpack
 
 def main():
 	import doctest
