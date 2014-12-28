@@ -4,6 +4,7 @@
 
 import struct
 from pprint import pprint
+from zutils import dbg,list_to_struct
 
 def main():
 	#f=open("/home/zinob/Projekt/filmrec/two-dirs-fat.dd")
@@ -170,30 +171,5 @@ def pretty_unpack(pformat,data):
 	titles=[i["abbrv"] for i in pformat if i["type"]!="pad"]
 	return(dict(zip(titles,headerStruct)))
 
-def list_to_struct(list):
-	"""Takes a list of dicts of the format
-	[{
-		len:bytes,
-		type:["byte"|"short"|"int"|"long"|"longlong"|"float"|"padding"|"string"],
-		sig:Bool
-	},
-	...]
-	and converts it to a python struct-fmt string"""
-	obuff=""
-	types={"pad":"x","byte":"b", "short":"h", "int":"i", "long":"l", "longlong":"q","string":"s"}
-	for i in list:
-		token=str(i.get("len",""))
-		token+=types[i["type"]]
-		if (not token[-1] in "xs") and not i["sig"]:
-			token=token.upper()
-		else:
-			token=token.lower()
 
-		obuff+=token
-	return obuff
-
-def dbg(*x):
-	import traceback
-	where=traceback.extract_stack()[-2][-2]
-	pprint((where,)+x)
 main()
