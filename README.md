@@ -2,10 +2,12 @@ x4-recovery
 ===========
 **As of yet this is just a very crude read-only FAT32 module in python created via explorative programing.**
 
-The goal of this program is to be able to recover films from memmory card disk-dumps of the Hubsan X4 HD.
+The goal of this program is to be able to recover films from memory card disk-dumps of the Hubsan X4 HD.
 
-The Hubsan X4 have an aggriviating bug of just creating a 4KiB AVI file with no usefull content if
-the power to the quad is cut before the user presses the "stop recording button" on the quad.
+The Hubsan X4 HD have an aggravating bug of just creating a 4KiB AVI file with no useful content if
+the power to the quad is cut before the user presses the "stop recording button" on the quad. This might either happen if the user forgets to press the button prior to disconnecting power or in the event of a hard landing.
+
+This is touted as a feature in the manual, so go figure.
 
 This is an attempt at seeing if it is possible to reconstruct the file by re-pointing the FAT
 and possibly re-creating the AVI (RIFF)-header
