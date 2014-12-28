@@ -17,13 +17,11 @@ def main():
 	dbg(fileblob.startswith("1the techno goes boom"))
 	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
 
+	dbg(len(mydisk.rootdir)==24)
+
 	assert False, "DEBUG DEATH"
-	cluster_begin_lba=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
 	sectors_per_cluster = h["BPB_SecPerClus"]
 	root_dir_first_cluster = h["BPB_RootClus"]
-	#lba_addr = cluster_begin_lba + (cluster_number - 2) * sectors_per_cluster
-	dirStart=(cluster_begin_lba)*h["BPB_BytsPerSec"]
-	f.seek(dirStart)
 	sector=read_fat_chain(f,h,2)
 	pprint(parseDir(sector))
 	#firstDict=parseObject(f.read(32))
@@ -39,16 +37,19 @@ class FAT(object):
 	def __init__(self, diskfile):
 		self.disk=open(diskfile,"rb")
 		self.header=self.parse_fat_header(self.disk.read(0x200))
+
+		sector=read_fat_chain(f,h,self.header["BPB_RootClus"])
+		self.rootdir=self.parse_dir(sector)
 		
 	def readDir(sector):
 		pass
 
-	def parseDir(binstruct):
+	def parse_dir(self,binstruct):
 		"""Expects a raw-directory listing,
-		returns a list of items as per parseObject"""
+		returns a list of items as per parse_object"""
 		files=[]
 		for i in range(0,len(binstruct),32):
-			cRecord=parseObject(binstruct[i:i+32])
+			cRecord=self.parse_object(binstruct[i:i+32])
 			if cRecord["TYPE"]=="normal":
 				files.append(cRecord)
 		return files
@@ -97,8 +98,8 @@ class FAT(object):
 		addr=f.read(4)
 		return struct.unpack("<L",addr)[0]
 
-	def parseObject(record):
-		"""parses a 32 byte long dict-struct
+	def parse_object(self,record):
+		"""parses a 32 byte long directory item
 		 returns it as a dictionary containing the most essensial records.
 		"""
 		dictStruct=[
