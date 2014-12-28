@@ -17,19 +17,10 @@ def main():
 	dbg(fileblob.startswith("1the techno goes boom"))
 	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
 	dbg(len(mydisk.rootdir)==24)
-
+	rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
+	refset=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
+	dbg(refset==rootset)
 	assert False, "DEBUG DEATH"
-	sectors_per_cluster = h["BPB_SecPerClus"]
-	root_dir_first_cluster = h["BPB_RootClus"]
-	sector=read_fat_chain(f,h,2)
-	pprint(parseDir(sector))
-	#firstDict=parseObject(f.read(32))
-	#pprint(["main",firstDict])
-	dbg([[i,read_FAT_pos(f,h,i)] for i in range(15)])
-	print "----"
-	#pprint(["main rootdir",read_fat_chain(f,h,2)])
-	#dbg(read_fat_chain(f,h,39))
-
 
 class FAT(object):
 	"""Represents a FAT32 file-system as an object"""
