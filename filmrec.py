@@ -12,7 +12,10 @@ def main():
 	dbg(mydisk.header)
 	dbg(mydisk.get_fat_chain(2)==[2])
 	dbg(mydisk.get_fat_chain(39)==[39,40])
-	dbg(mydisk.read_fat_chain(39))
+	fileblob=mydisk.read_fat_chain(39)
+	dbg(len(fileblob)==8192)
+	dbg(fileblob.startswith("1the techno goes boom"))
+	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
 
 	assert False, "DEBUG DEATH"
 	cluster_begin_lba=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
