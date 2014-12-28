@@ -10,8 +10,9 @@ def main():
 	f=open("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	dbg(mydisk.header)
-	dbg(mydisk.get_fat_chain(2))
-	dbg(mydisk.get_fat_chain(39))
+	dbg(mydisk.get_fat_chain(2)==[2])
+	dbg(mydisk.get_fat_chain(39)==[39,40])
+	dbg(mydisk.read_fat_chain(39))
 
 	assert False, "DEBUG DEATH"
 	cluster_begin_lba=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
@@ -49,21 +50,22 @@ class FAT(object):
 				files.append(cRecord)
 		return files
 
-	def read_fat_chain(f,fatHeader,start):
-		h=fatHeader
+	def read_fat_chain(self,start):
+		h=self.header
+		f=self.disk
 		secPerClus=h["BPB_SecPerClus"]
 		bytsPerSec=h["BPB_BytsPerSec"]
-		byterPerClus=secPerClus*bytsPerSec
+		bytesPerClus=secPerClus*bytsPerSec
 
 		firstDataSector=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
 		firstSectorofCluster  = ((start -2)*secPerClus)+firstDataSector
 		addr=firstSectorofCluster*bytsPerSec
 		obuff=""
-		for i in get_fat_chain(f,fatHeader,start):
+		for i in self.get_fat_chain(start):
 			firstSectorofCluster  = ((i -2)*secPerClus)+firstDataSector
 			addr=firstSectorofCluster*bytsPerSec
 			f.seek(addr)
-			obuff+=f.read(byterPerClus)
+			obuff+=f.read(bytesPerClus)
 		return obuff
 
 	def get_fat_chain(self,start):
