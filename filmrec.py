@@ -9,8 +9,10 @@ from zutils import dbg,list_to_struct,pretty_unpack
 def main():
 	f=open("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
-
 	dbg(mydisk.header)
+	dbg(mydisk.get_fat_chain(2))
+	dbg(mydisk.get_fat_chain(39))
+
 	assert False, "DEBUG DEATH"
 	cluster_begin_lba=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
 	sectors_per_cluster = h["BPB_SecPerClus"]
@@ -64,22 +66,27 @@ class FAT(object):
 			obuff+=f.read(byterPerClus)
 		return obuff
 
-	def get_fat_chain(f,fatHeader,start):
-		"""takes a file pointer, a fat header and a starting sector,
-		returns a list of the sectors associated with that file"""
+	def get_fat_chain(self,start):
+		"""Takes a starting cluster,
+		returns a list of the clusters associated with that file"""
 		chain=[start]
+		f=self.disk
+		fatHeader=self.header
+
 		while True:
 			assert chain[-1]!=0, "Null-pointer in record"
-			if chain[-1] < 0xffffff8:
-				chain.append(read_FAT_pos(f,fatHeader,chain[-1]))
+			next=self.read_FAT_pos(chain[-1])
+			if next < 0xffffff8:
+				chain.append(next)
 			else:
 				return chain
 			
 
-	def read_FAT_pos(f, fatHeader, pos):
+	def read_FAT_pos(self, pos):
 		"""expects a file pointer and the associated FAT-header
 		returns the FAT as a list"""
-		h=fatHeader
+		f=self.disk
+		h=self.header
 		f.seek(h["BPB_RsvdSecCnt"]*h["BPB_BytsPerSec"]+4*pos)
 		fatSize=h["BPB_FATSz32"]*h["BPB_BytsPerSec"]
 		addr=f.read(4)
