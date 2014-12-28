@@ -173,5 +173,5 @@ class FAT(object):
 		return header
 
 
-
-main()
+if __name__ == "__main__":
+	main()
