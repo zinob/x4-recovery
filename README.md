@@ -12,6 +12,9 @@ This is touted as a feature in the manual, so go figure.
 This is an attempt at seeing if it is possible to reconstruct the file by re-pointing the FAT
 and possibly re-creating the AVI (RIFF)-header
 
+###About the file testfat.zip
+The file testfat.zip is just a simple file system created using the command mkfs.vfat -F 32, It will decompress to a roughly 300MB file, since that is around the practical minimum for a FAT32 partition. 
+
 Sources:
 -----
 * [Paul Stoffregen - Understanding FAT32 Filesystems](https://www.pjrc.com/tech/8051/ide/fat32.html)
