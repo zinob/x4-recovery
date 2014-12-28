@@ -6,26 +6,50 @@ import struct
 from zutils import dbg,list_to_struct,pretty_unpack
 
 def main():
-	mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
-	dbg(mydisk.header)
-	dbg(mydisk.get_fat_chain(2)==[2])
-	dbg(mydisk.get_fat_chain(39)==[39,40])
+	import doctest
+	doctest.testmod()
 
-	fileblob=mydisk.read_fat_chain(39)
-	dbg(len(fileblob)==8192)
-	dbg(fileblob.startswith("1the techno goes boom"))
-	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
-	dbg(len(mydisk.rootdir)==24)
+def test_header():
+	"""
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> mydisk.get_fat_chain(2)==[2]
+	True
+	>>> mydisk.get_fat_chain(39)==[39,40]
+	True
+	"""
 
-	rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
-	refset=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
-	dbg(refset==rootset)
+def test_naive_file_read():
+	"""
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> cowfile=[i["DIR_FstClus"] for i in mydisk.rootdir if i["DIR_Name"].startswith("MOOH")][0]
+	>>> cowfile
+	39
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> fileblob=mydisk.read_fat_chain(cowfile)
+	>>> len(fileblob)==8192
+	True
+	>>> fileblob.startswith("1the techno goes boom")
+	True
+	>>> fileblob[4899:4911]=='uhnts uhnts\\n'
+	True
+	"""
 
-	dbg([39]==[i["DIR_FstClus"] for i in mydisk.rootdir if i["DIR_Name"].startswith("MOOH")])
+def test_dir_content():
+	"""
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> len(mydisk.rootdir)
+	24
 
-	dbg(mydisk.get_dir([])==mydisk.rootdir)
-	assert False, "DEBUG DEATH"
-
+	>>> rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
+	>>> ref=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
+	>>> ref==rootset
+	True
+	>>> mydisk.get_dir([])==mydisk.rootdir
+	True
+	>>> subdir=[i["DIR_Name"].strip() for i in mydisk.get_dir(["FOO"])]
+	>>> set(subdir)==set(['.', '..', 'XYZ', 'ZYX'])
+	True
+	"""
 class FAT(object):
 	"""Represents a FAT32 file-system as an object"""
 	def __init__(self, diskfile):
@@ -51,8 +75,8 @@ class FAT(object):
 			ename=entry["DIR_Name"].strip().upper()
 			eaddr=entry["DIR_FstClus"]
 			if ctarget==ename:
-				if i["DIR_Attr"]["isDict"]:
-					self.__r_get_dir(pathlist[1:],self.read_dir(eaddr))
+				if entry["DIR_Attr"]["isDict"]:
+					return self.__r_get_dir(pathlist[1:],self.read_dir(eaddr))
 					
 
 	def read_dir(self,sector):
