@@ -1,6 +1,7 @@
 from __future__ import print_function
 from pprint import pprint
 import traceback
+import struct
 def list_to_struct(list):
 	"""Takes a list of dicts of the format
 	[{
@@ -23,8 +24,19 @@ def list_to_struct(list):
 		obuff+=token
 	return obuff
 
+def pretty_unpack(pformat,data):
+		"""Takes a pretty-struct format as expected by list_to_struct
+		returns a dict with each field-value indexed by a "abbrv" attribute
+		"""
+
+		fmt="<"+list_to_struct(pformat)
+		headerStruct=struct.unpack_from(fmt,data)
+		titles=[i["abbrv"] for i in pformat if i["type"]!="pad"]
+		return(dict(zip(titles,headerStruct)))
+
 def dbg(*x):
 	"""Crude debug-println which includes the calling function name
 	"""
 	print(traceback.extract_stack()[-2][-2],end=": ")
 	pprint(x)
+
