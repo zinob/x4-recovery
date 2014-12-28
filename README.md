@@ -24,3 +24,4 @@ Sources:
 * [Microsoft - FAT: General Overview of On-Disk Format](http://staff.washington.edu/dittrich/misc/fatgen103.pdf)
 * https://github.com/mk-fg/fgtk/blob/master/desktop/vfat_shuffler
 * [Microsoft - AVI RIFF File Reference](http://msdn.microsoft.com/en-us/library/ms779636.aspx)
+* [BETA DOCUMENTATNION OF RIFF-AVI FILE FORMAT](http://pvdtools.sourceforge.net/aviformat.txt)
