@@ -39,7 +39,6 @@ def test_dir_content():
 	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	>>> len(mydisk.rootdir)
 	24
-
 	>>> rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
 	>>> ref=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
 	>>> ref==rootset
@@ -49,6 +48,12 @@ def test_dir_content():
 	>>> subdir=[i["DIR_Name"].strip() for i in mydisk.get_dir(["FOO"])]
 	>>> set(subdir)==set(['.', '..', 'XYZ', 'ZYX'])
 	True
+	>>> mydisk.get_dir(["doesnotexist,shouldfail"])
+	Traceback (most recent call last):
+	...
+	KeyError: 'Directory "DOESNOTEXIST,SHOULDFAIL" not found'
+
+	HorribleFailure
 	"""
 class FAT(object):
 	"""Represents a FAT32 file-system as an object"""
@@ -78,6 +83,8 @@ class FAT(object):
 				if entry["DIR_Attr"]["isDict"]:
 					return self.__r_get_dir(pathlist[1:],self.read_dir(eaddr))
 					
+		else:
+			raise KeyError('Directory "%s" not found'%ctarget)
 
 	def read_dir(self,sector):
 		"""Reads the content of a directory starting at sector
