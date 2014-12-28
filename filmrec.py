@@ -6,7 +6,8 @@ import struct
 from pprint import pprint
 
 def main():
-	f=open("/home/zinob/Projekt/filmrec/two-dirs-fat.dd")
+	#f=open("/home/zinob/Projekt/filmrec/two-dirs-fat.dd")
+	f=open("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	#f=open("/home/zinob/Backups/sdcard.dd")
 	h=parseFatHeader(f.read(0x200))
 
@@ -17,35 +18,56 @@ def main():
 	#lba_addr = cluster_begin_lba + (cluster_number - 2) * sectors_per_cluster
 	dirStart=(cluster_begin_lba)*h["BPB_BytsPerSec"]
 	f.seek(dirStart)
-	sector=f.read(512)
-	pprint(readDir(sector,dirStart))
-	#firstDict=parseDict(f.read(32))
+	sector=read_fat_chain(f,h,2)
+	pprint(parseDir(sector))
+	#firstDict=parseObject(f.read(32))
 	#pprint(["main",firstDict])
-	#pprint([[i,read_FAT_pos(f,h,i)] for i in range(150)])
+	dbg([[i,read_FAT_pos(f,h,i)] for i in range(15)])
 	print "----"
-	pprint(get_fat_chain(f,h,18))
+	#pprint(["main rootdir",read_fat_chain(f,h,2)])
+	#dbg(read_fat_chain(f,h,39))
 
 
-def readDir(sector,dirStart):
+def readDir(sector):
+	pass
+
+def parseDir(binstruct):
+	"""Expects a raw-directory listing,
+	returns a list of items as per parseObject"""
 	files=[]
-	for i in range(0,512,32):
-		cRecord=parseDict(sector[i:i+32])
+	for i in range(0,len(binstruct),32):
+		cRecord=parseObject(binstruct[i:i+32])
 		if cRecord["TYPE"]=="normal":
 			files.append(cRecord)
 	return files
+
+def read_fat_chain(f,fatHeader,start):
+	h=fatHeader
+	secPerClus=h["BPB_SecPerClus"]
+	bytsPerSec=h["BPB_BytsPerSec"]
+	byterPerClus=secPerClus*bytsPerSec
+
+	firstDataSector=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
+	firstSectorofCluster  = ((start -2)*secPerClus)+firstDataSector
+	addr=firstSectorofCluster*bytsPerSec
+	obuff=""
+	for i in get_fat_chain(f,fatHeader,start):
+		firstSectorofCluster  = ((i -2)*secPerClus)+firstDataSector
+		addr=firstSectorofCluster*bytsPerSec
+		f.seek(addr)
+		obuff+=f.read(byterPerClus)
+	return obuff
 
 def get_fat_chain(f,fatHeader,start):
 	"""takes a file pointer, a fat header and a starting sector,
 	returns a list of the sectors associated with that file"""
 	chain=[start]
-	nxt=read_FAT_pos(f,fatHeader,chain[-1])
 	while True:
-		assert nxt!=0, "Invalid fat-record"
-		if nxt < 0xfffffff:
-			chain.append(nxt)
+		assert chain[-1]!=0, "Null-pointer in record"
+		if chain[-1] < 0xffffff8:
+			chain.append(read_FAT_pos(f,fatHeader,chain[-1]))
 		else:
 			return chain
-		nxt=read_FAT_pos(f,fatHeader,chain[-1])
 		
 
 def read_FAT_pos(f, fatHeader, pos):
@@ -57,9 +79,9 @@ def read_FAT_pos(f, fatHeader, pos):
 	addr=f.read(4)
 	return struct.unpack("<L",addr)[0]
 
-def parseDict(record):
-	"""parses a 32 byte long string and parses
-	it as a FAT dictionary record.
+def parseObject(record):
+	"""parses a 32 byte long dict-struct
+	 returns it as a dictionary containing the most essensial records.
 	"""
 	dictStruct=[
 		{"desc":"Short Filename", "abbrv":"DIR_Name",
@@ -170,4 +192,8 @@ def list_to_struct(list):
 		obuff+=token
 	return obuff
 
+def dbg(*x):
+	import traceback
+	where=traceback.extract_stack()[-2][-2]
+	pprint((where,)+x)
 main()
