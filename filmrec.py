@@ -16,7 +16,6 @@ def main():
 	dbg(len(fileblob)==8192)
 	dbg(fileblob.startswith("1the techno goes boom"))
 	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
-
 	dbg(len(mydisk.rootdir)==24)
 
 	assert False, "DEBUG DEATH"
@@ -38,11 +37,13 @@ class FAT(object):
 		self.disk=open(diskfile,"rb")
 		self.header=self.parse_fat_header(self.disk.read(0x200))
 
-		sector=read_fat_chain(f,h,self.header["BPB_RootClus"])
-		self.rootdir=self.parse_dir(sector)
+		self.rootdir=self.read_dir(self.header["BPB_RootClus"])
 		
-	def readDir(sector):
-		pass
+	def read_dir(self,sector):
+		"""Reads the content of a directory starting at sector
+		returns a list of the content, as per parse_object"""
+		struct=self.read_fat_chain(sector)
+		return self.parse_dir(struct)
 
 	def parse_dir(self,binstruct):
 		"""Expects a raw-directory listing,
@@ -122,7 +123,7 @@ class FAT(object):
 		unpacked["DIR_FstClus"]=unpacked["DIR_FstClusHI"]*2**16+unpacked["DIR_FstClusLO"]
 
 		attr=unpacked["DIR_Attr"]
-		unpacked["DIR_Attr"]=parseDictAttr(unpacked["DIR_Attr"])
+		unpacked["DIR_Attr"]=self.parse_dir_attr(unpacked["DIR_Attr"])
 		
 		if attr&15==15:
 			unpacked["TYPE"]="long"
@@ -138,8 +139,8 @@ class FAT(object):
 		#End of directory - First byte is zero 
 		return unpacked
 
-	def parseDictAttr(attrByte):
-		"""Takes a single byte and parses it as an attribute-byte for a catalog
+	def parse_dir_attr(self,attrByte):
+		"""Takes a single attribute-byte for a directory item 
 		returns a dict of boolean attributes
 		"""
 		bitmap=[bool(attrByte>>i&1) for i in range(8)]
