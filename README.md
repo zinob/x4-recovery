@@ -13,7 +13,10 @@ This is an attempt at seeing if it is possible to reconstruct the file by re-poi
 and possibly re-creating the AVI (RIFF)-header
 
 ###About the file testfat.zip
-The file testfat.zip is just a simple file system created using the command mkfs.vfat -F 32, It will decompress to a roughly 300MB file, since that is around the practical minimum for a FAT32 partition. 
+The file testfat.zip is just a simple file system created using the command mkfs.vfat -F 32, It will decompress to a roughly 300MB file, since that is around the practical minimum for a FAT32 partition. If the file is decompressed sparsely it should just be a few hundred bytes. If your file-system supports sparse files you can probably remove the extra space by using:
+```
+cp --sparse=always buncofiles.dd buncofiles.dd-sparse && mv buncofiles.dd-sparse buncofiles.dd
+```
 
 Sources:
 -----
