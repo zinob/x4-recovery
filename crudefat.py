@@ -3,7 +3,7 @@
 # https://www.pjrc.com/tech/8051/ide/fat32.html
 
 import struct
-from zutils import pretty_unpack
+from zutils import pretty_unpack,dbg
 
 def main():
 	import doctest
@@ -34,6 +34,30 @@ def test_naive_file_read():
 	True
 	"""
 
+#def test_file_read():
+#	"""
+#	>>> import StringIO
+#	>>> fauxFile=StringIO.StringIO()
+#	>>> fauxFile2=StringIO.StringIO()
+#	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+#	>>> mydisk.read_into(fauxFile,["mooh"])
+#	>>> mydisk.read_into(fauxFile2,["mooh","XYZ"])
+#	"""
+
+def test_get_file_data():
+	"""
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> d=mydisk.get_file_data(["FOO","XYZ"])
+	>>> [d[i] for i in ['DIR_Name','DIR_FstClus','DIR_FileSize'] ]
+	['XYZ        ', 0, 0]
+	>>> d2=mydisk.get_file_data(["MOOH"])
+	>>> [d2[i] for i in ['DIR_Name','DIR_FstClus','DIR_FileSize'] ]
+	['MOOH       ', 39, 4911]
+	>>> mydisk.get_file_data(["ASDFIMPOSSIBLEFILE!"])
+	Traceback (most recent call last):
+	...
+	KeyError: 'File "[\\\'ASDFIMPOSSIBLEFILE!\\\']" not found'
+	"""
 def test_dir_content():
 	"""
 	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
@@ -52,9 +76,8 @@ def test_dir_content():
 	Traceback (most recent call last):
 	...
 	KeyError: 'Directory "DOESNOTEXIST,SHOULDFAIL" not found'
-
-	HorribleFailure
 	"""
+
 class FAT(object):
 	"""Represents a FAT32 file-system as an object"""
 	def __init__(self, diskfile):
@@ -71,6 +94,20 @@ class FAT(object):
 		returns the content of the requested directory
 		"""
 		return self.__r_get_dir(pathlist,self.rootdir)
+
+	def get_file_data(self,pathlist):
+		"""
+		Returns the meta-data struct for a particular file
+		as denoted by its path using the same syntax as get_dir
+		"""
+		target=pathlist[-1].strip().upper()
+		parent=self.get_dir(pathlist[:-1])
+
+		for i in parent:
+			if i["DIR_Name"].strip().upper() == target :
+				return i
+		else:
+			raise KeyError('File "%s" not found'%repr(pathlist))
 
 	def __r_get_dir(self, pathlist, start):
 		if pathlist==[]:
