@@ -1,9 +1,8 @@
 #!/usr/bin/python
-#all FAT32 code based on:
+#FAT32 code mostly based on:
 # https://www.pjrc.com/tech/8051/ide/fat32.html
 
 import struct
-from pprint import pprint
 from zutils import dbg,list_to_struct,pretty_unpack
 
 def main():
@@ -21,6 +20,9 @@ def main():
 	rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
 	refset=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
 	dbg(refset==rootset)
+
+	dbg([39]==[i["DIR_FstClus"] for i in mydisk.rootdir if i["DIR_Name"].startswith("MOOH")])
+
 	assert False, "DEBUG DEATH"
 
 class FAT(object):
@@ -118,7 +120,7 @@ class FAT(object):
 		unpacked["DIR_Attr"]=self.parse_dir_attr(unpacked["DIR_Attr"])
 		
 		if attr&15==15:
-			unpacked["TYPE"]="long"
+			unpacked["TYPE"]="longname"
 		elif unpacked["DIR_Name"][0]=="\0":
 			unpacked["TYPE"]="end"
 		elif unpacked["DIR_Name"][0]=="\xe5":
