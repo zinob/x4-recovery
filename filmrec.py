@@ -7,16 +7,17 @@ from pprint import pprint
 from zutils import dbg,list_to_struct,pretty_unpack
 
 def main():
-	f=open("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	dbg(mydisk.header)
 	dbg(mydisk.get_fat_chain(2)==[2])
 	dbg(mydisk.get_fat_chain(39)==[39,40])
+
 	fileblob=mydisk.read_fat_chain(39)
 	dbg(len(fileblob)==8192)
 	dbg(fileblob.startswith("1the techno goes boom"))
 	dbg(fileblob[4899:4911]=="uhnts uhnts\n")
 	dbg(len(mydisk.rootdir)==24)
+
 	rootset=set([i["DIR_Name"].strip() for i in mydisk.rootdir])
 	refset=set(['BAR','COW','MOOH','FOO']).union(str(i) for i in range(1,21))
 	dbg(refset==rootset)
