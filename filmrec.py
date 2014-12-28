@@ -23,6 +23,7 @@ def main():
 
 	dbg([39]==[i["DIR_FstClus"] for i in mydisk.rootdir if i["DIR_Name"].startswith("MOOH")])
 
+	dbg(mydisk.get_dir([])==mydisk.rootdir)
 	assert False, "DEBUG DEATH"
 
 class FAT(object):
@@ -33,6 +34,27 @@ class FAT(object):
 
 		self.rootdir=self.read_dir(self.header["BPB_RootClus"])
 		
+	def get_dir(self,pathlist):
+		"""
+		returns the content of a specified directory
+		for an example directory of /foo/bar/ the pathlist should be
+		["foo","bar"]
+		returns the content of the requested directory
+		"""
+		return self.__r_get_dir(pathlist,self.rootdir)
+
+	def __r_get_dir(self, pathlist, start):
+		if pathlist==[]:
+			return start
+		ctarget=pathlist[0].upper()
+		for entry in start:
+			ename=entry["DIR_Name"].strip().upper()
+			eaddr=entry["DIR_FstClus"]
+			if ctarget==ename:
+				if i["DIR_Attr"]["isDict"]:
+					self.__r_get_dir(pathlist[1:],self.read_dir(eaddr))
+					
+
 	def read_dir(self,sector):
 		"""Reads the content of a directory starting at sector
 		returns a list of the content, as per parse_object"""
