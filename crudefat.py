@@ -121,9 +121,9 @@ class FAT(object):
 			raise KeyError('File "%s" not found'%repr(pathlist))
 
 	def read_into(self,target, pathlist, truncate=True):
-		"""Takes a file-object and a filepath (as a pathlist) and
-		.writes() the data to the file object.
-		an optional argument "truncate" might be supplied as either
+		"""Takes a file-object and a filepath (as a pathlist)
+		.writes() the data found in pathlist to the file object.
+		An optional argument "truncate" might be supplied as either
 		a boolean to control if the file-size argument in the
 		file-record should be obeyed or as an integer representing the
 		maximum number of bytes to read.
@@ -147,7 +147,7 @@ class FAT(object):
 			if total+bufflen >= targetsize:
 				delta=targetsize-total
 				target.write(buff[:delta])
-				return target.tell()-targetStart
+				return total+delta
 			else:
 				total+=bufflen
 				target.write(buff)
