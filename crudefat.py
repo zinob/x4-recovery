@@ -41,11 +41,17 @@ def test_file_read():
 	>>> fauxFile2=StringIO.StringIO()
 	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
 	>>> mydisk.read_into(fauxFile,["mooh"],truncate=True)
+	4911
 	>>> fauxFile.seek(0)
 	>>> fauxFile.read(1)
 	'1'
 	>>> fauxFile.read()[-1]
-	>>> mydisk.read_into(fauxFile2,["mooh"])
+	'\\n'
+	>>> mydisk.read_into(fauxFile2,["mooh"],truncate=False)
+	8192
+	>>> fauxFile2.seek(0)
+	>>> fauxFile2.read()[-1]
+	'\\x00'
 	"""
 
 def test_get_file_data():
@@ -133,17 +139,17 @@ class FAT(object):
 			targetsize=truncate
 		else:
 			raise TypeError("Third argument, truncate must be boolean or possitive int")
-		dbg(targetsize)
 		targetStart=target.tell()
 		total=0
 		for i in self.get_fat_chain(addr):
 			buff=self.read_cluster(i)
-			total+=len(buff)
-			if total >= targetsize:
-				target.write(buff[:-(total-targetsize)])
-				dbg(total +total-targetsize)
+			bufflen=len(buff)
+			if total+bufflen >= targetsize:
+				delta=targetsize-total
+				target.write(buff[:delta])
 				return target.tell()-targetStart
 			else:
+				total+=bufflen
 				target.write(buff)
 		return total
 
