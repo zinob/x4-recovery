@@ -44,7 +44,8 @@ def test_file_read():
 	>>> fauxFile.seek(0)
 	>>> fauxFile.read(1)
 	'1'
-	#>>> mydisk.read_into(fauxFile2,["mooh","XYZ"])
+	>>> fauxFile.read()[-1]
+	>>> mydisk.read_into(fauxFile2,["mooh"])
 	"""
 
 def test_get_file_data():
@@ -125,14 +126,26 @@ class FAT(object):
 		metadata=self.get_file_data(pathlist)
 		addr=metadata["DIR_FstClus"]
 		if truncate==True:
-			size=metadata["DIR_FileSize"]
+			targetsize=metadata["DIR_FileSize"]
 		elif truncate==False:
-			size=float("inf") #yeah float...
+			targetsize=float("inf") #yeah float...
 		elif truncate==int and truncate >0:
-			size=truncate
+			targetsize=truncate
 		else:
 			raise TypeError("Third argument, truncate must be boolean or possitive int")
-		dbg(self.get_fat_chain(addr))
+		dbg(targetsize)
+		targetStart=target.tell()
+		total=0
+		for i in self.get_fat_chain(addr):
+			buff=self.read_cluster(i)
+			total+=len(buff)
+			if total >= targetsize:
+				target.write(buff[:-(total-targetsize)])
+				dbg total +total-targetsize
+				return target.tell()-targetStart
+			else:
+				target.write(buff)
+		return total
 
 
 	def __r_get_dir(self, pathlist, start):
@@ -166,8 +179,6 @@ class FAT(object):
 		return files
 
 	def read_fat_chain(self,start):
-		h=self.header
-		f=self.disk
 		obuff=""
 		for i in self.get_fat_chain(start):
 			obuff+=self.read_cluster(i)
