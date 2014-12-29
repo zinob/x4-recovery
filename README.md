@@ -1,8 +1,12 @@
 x4-recovery
 ===========
-**As of yet this is just a very crude read-only FAT32 module in python created via explorative programing\*.**
-
 The goal of this program is to be able to recover films from memory card disk-dumps of the Hubsan X4 HD.
+
+It sort of works, but it could use an actual RIFF-parser.
+
+Currently the path and how long you think the AVI should be is hard-coded in to "extract-brokenavi.py" it then just reads that much from the card, praying that the data isnt fragmented, since the FAT wasnt continious but rather contained zeroes in the middle it wasnt possible to just read that. A deeper understanding of RIFF is needed in order to propperly decode the film data.
+
+It then just pastes the header-data from another file captured with the same camera module, **in order for the file to actually be playable, you have to run it through [DIVXFIX++](http://www.divfix.org/download.php).**
 
 The Hubsan X4 HD have an aggravating bug of just creating a 4KiB AVI file with no useful content if
 the power to the quad is cut before the user presses the "stop recording button" on the quad. This might either happen if the user forgets to press the button prior to disconnecting power or in the event of a hard landing.
