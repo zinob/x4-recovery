@@ -141,7 +141,7 @@ class FAT(object):
 			total+=len(buff)
 			if total >= targetsize:
 				target.write(buff[:-(total-targetsize)])
-				dbg total +total-targetsize
+				dbg(total +total-targetsize)
 				return target.tell()-targetStart
 			else:
 				target.write(buff)
