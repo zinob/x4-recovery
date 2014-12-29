@@ -122,11 +122,14 @@ class FAT(object):
 
 	def read_into(self,target, pathlist, truncate=True):
 		"""Takes a file-object and a filepath (as a pathlist)
-		.writes() the data found in pathlist to the file object.
+		.writes() the data found in the file specified by pathlist
+		to the file object.
+
 		An optional argument "truncate" might be supplied as either
 		a boolean to control if the file-size argument in the
 		file-record should be obeyed or as an integer representing the
 		maximum number of bytes to read.
+
 		Returns the number of bytes read.
 		"""
 		metadata=self.get_file_data(pathlist)
@@ -204,7 +207,7 @@ class FAT(object):
 		f.seek(addr)
 		return f.read(bytesPerClus)
 
-	def get_fat_chain(self,start):
+	def get_fat_chain(self,start,naive=False):
 		"""Takes a starting cluster,
 		returns a list of the clusters associated with that file"""
 		chain=[start]
@@ -212,7 +215,11 @@ class FAT(object):
 		fatHeader=self.header
 
 		while True:
-			assert chain[-1]!=0, "Null-pointer in record"
+			if chain[-1]==0:
+				if not naive:
+					raise LookupError("Null-pointer in record: "+repr(chain))
+				else:
+					return chain
 			next=self.read_FAT_pos(chain[-1])
 			if next < 0xffffff8:
 				chain.append(next)
