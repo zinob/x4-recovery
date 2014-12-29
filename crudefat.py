@@ -34,15 +34,18 @@ def test_naive_file_read():
 	True
 	"""
 
-#def test_file_read():
-#	"""
-#	>>> import StringIO
-#	>>> fauxFile=StringIO.StringIO()
-#	>>> fauxFile2=StringIO.StringIO()
-#	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
-#	>>> mydisk.read_into(fauxFile,["mooh"])
-#	>>> mydisk.read_into(fauxFile2,["mooh","XYZ"])
-#	"""
+def test_file_read():
+	"""
+	>>> import StringIO
+	>>> fauxFile=StringIO.StringIO()
+	>>> fauxFile2=StringIO.StringIO()
+	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
+	>>> mydisk.read_into(fauxFile,["mooh"],truncate=True)
+	>>> fauxFile.seek(0)
+	>>> fauxFile.read(1)
+	'1'
+	#>>> mydisk.read_into(fauxFile2,["mooh","XYZ"])
+	"""
 
 def test_get_file_data():
 	"""
@@ -58,6 +61,7 @@ def test_get_file_data():
 	...
 	KeyError: 'File "[\\\'ASDFIMPOSSIBLEFILE!\\\']" not found'
 	"""
+
 def test_dir_content():
 	"""
 	>>> mydisk=FAT("/home/zinob/Projekt/filmrec/buncofiles.dd")
@@ -109,6 +113,28 @@ class FAT(object):
 		else:
 			raise KeyError('File "%s" not found'%repr(pathlist))
 
+	def read_into(self,target, pathlist, truncate=True):
+		"""Takes a file-object and a filepath (as a pathlist) and
+		.writes() the data to the file object.
+		an optional argument "truncate" might be supplied as either
+		a boolean to control if the file-size argument in the
+		file-record should be obeyed or as an integer representing the
+		maximum number of bytes to read.
+		Returns the number of bytes read.
+		"""
+		metadata=self.get_file_data(pathlist)
+		addr=metadata["DIR_FstClus"]
+		if truncate==True:
+			size=metadata["DIR_FileSize"]
+		elif truncate==False:
+			size=float("inf") #yeah float...
+		elif truncate==int and truncate >0:
+			size=truncate
+		else:
+			raise TypeError("Third argument, truncate must be boolean or possitive int")
+		dbg(self.get_fat_chain(addr))
+
+
 	def __r_get_dir(self, pathlist, start):
 		if pathlist==[]:
 			return start
@@ -142,20 +168,24 @@ class FAT(object):
 	def read_fat_chain(self,start):
 		h=self.header
 		f=self.disk
+		obuff=""
+		for i in self.get_fat_chain(start):
+			obuff+=self.read_cluster(i)
+		return obuff
+
+	def read_cluster(self,cluster):
+		h=self.header
+		f=self.disk
 		secPerClus=h["BPB_SecPerClus"]
 		bytsPerSec=h["BPB_BytsPerSec"]
 		bytesPerClus=secPerClus*bytsPerSec
 
 		firstDataSector=h["BPB_RsvdSecCnt"] + (h["BPB_NumFATs"] * h["BPB_FATSz32"])
-		firstSectorofCluster  = ((start -2)*secPerClus)+firstDataSector
+
+		firstSectorofCluster  = ((cluster -2)*secPerClus)+firstDataSector
 		addr=firstSectorofCluster*bytsPerSec
-		obuff=""
-		for i in self.get_fat_chain(start):
-			firstSectorofCluster  = ((i -2)*secPerClus)+firstDataSector
-			addr=firstSectorofCluster*bytsPerSec
-			f.seek(addr)
-			obuff+=f.read(bytesPerClus)
-		return obuff
+		f.seek(addr)
+		return f.read(bytesPerClus)
 
 	def get_fat_chain(self,start):
 		"""Takes a starting cluster,
