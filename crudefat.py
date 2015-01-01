@@ -1,4 +1,11 @@
 #!/usr/bin/python
+
+# Copyright Simon Albinsson 2014
+# This software is licensed under the GPL v3 license.
+# While I think GPL v3 is a bit to restrictive in the
+# views that there is only one kind of "true freedom"
+# I _really_ dislike DRM.
+
 #FAT32 code mostly based on:
 # https://www.pjrc.com/tech/8051/ide/fat32.html
 
